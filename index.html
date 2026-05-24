@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explícame — Te explico cualquier cosa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0D0D0D;
+      --surface:   #161616;
+      --border:    #2A2A2A;
+      --accent:    #F5E642;
+      --accent-dim:#C8BB2A;
+      --text:      #EFEFEF;
+      --text-muted:#7A7A7A;
+      --user-bg:   #1E1E1E;
+      --bot-bg:    #161616;
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --radius:    14px;
+      --transition: 0.2s ease;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── GRAIN OVERLAY ─────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ── LAYOUT ────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 760px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* ── HEADER ────────────────────────────────────────── */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    #header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #logo {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    #logo span {
+      color: var(--accent);
+    }
+
+    #status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background var(--transition);
+    }
+    #status-dot.active { background: #4ade80; box-shadow: 0 0 6px #4ade8066; }
+
+    #btn-reset {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: all var(--transition);
+    }
+    #btn-reset:hover { border-color: var(--text-muted); color: var(--text); }
+
+    /* ── MESSAGES ──────────────────────────────────────── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .msg {
+      display: flex;
+      gap: 14px;
+      animation: fadeUp 0.3s ease forwards;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .msg.bot .avatar {
+      background: var(--accent);
+      color: #0D0D0D;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-style: italic;
+    }
+
+    .msg.user .avatar {
+      background: var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 13px 17px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.7;
+    }
+
+    .msg.bot .bubble {
+      background: var(--bot-bg);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+      color: var(--text);
+    }
+
+    .msg.user .bubble {
+      background: var(--user-bg);
+      border: 1px solid var(--border);
+      border-top-right-radius: 4px;
+      color: var(--text);
+    }
+
+    /* Markdown styles inside bubbles */
+    .bubble strong { color: var(--accent); font-weight: 500; }
+    .bubble em { color: var(--text-muted); font-style: italic; }
+    .bubble code {
+      background: #222;
+      color: #F5E642;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+    }
+    .bubble a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { padding-left: 18px; margin-bottom: 8px; }
+    .bubble li { margin-bottom: 3px; }
+
+    /* Token input special style */
+    .msg.bot .bubble.token-prompt {
+      border-color: var(--accent);
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Thinking indicator */
+    .thinking .bubble {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 14px 20px;
+    }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); }
+      40%            { opacity: 1;   transform: scale(1); }
+    }
+
+    /* ── SUGGESTIONS ───────────────────────────────────── */
+    #suggestions {
+      display: flex;
+      gap: 8px;
+      padding: 0 24px 14px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .suggestion-chip {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 12.5px;
+      padding: 6px 13px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .suggestion-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── INPUT AREA ────────────────────────────────────── */
+    #input-area {
+      padding: 12px 24px 20px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    #input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      transition: border-color var(--transition);
+    }
+    #input-row:focus-within { border-color: var(--accent); }
+
+    #input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14.5px;
+      line-height: 1.5;
+      resize: none;
+      max-height: 140px;
+      min-height: 22px;
+    }
+    #input::placeholder { color: var(--text-muted); }
+
+    #send-btn {
+      background: var(--accent);
+      border: none;
+      color: #0D0D0D;
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+    #send-btn:hover { background: var(--accent-dim); transform: scale(1.05); }
+    #send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    #send-btn svg { width: 16px; height: 16px; }
+
+    #footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── WELCOME SCREEN ────────────────────────────────── */
+    #welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    #welcome-icon {
+      font-family: var(--font-display);
+      font-size: 52px;
+      color: var(--accent);
+      font-style: italic;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    #welcome h1 {
+      font-family: var(--font-display);
+      font-size: 30px;
+      font-weight: normal;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    #welcome p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 340px;
+    }
+
+    /* Scrollbar color for Firefox */
+    #messages { scrollbar-color: var(--border) transparent; scrollbar-width: thin; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      #header { padding: 14px 16px 12px; }
+      #messages { padding: 20px 16px; }
+      #suggestions { padding: 0 16px 12px; }
+      #input-area { padding: 10px 16px 16px; }
+      .bubble { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header id="header">
+    <div id="header-left">
+      <div id="logo">Explíca<span>me</span></div>
+      <div id="status-dot" title="Estado"></div>
+    </div>
+    <button id="btn-reset" title="Nueva conversación">↺ Nueva sesión</button>
+  </header>
+
+  <!-- WELCOME (shown before first message) -->
+  <div id="welcome">
+    <div id="welcome-icon">✦</div>
+    <h1>Te explico cualquier cosa.</h1>
+    <p>Pregúntame sobre ciencia, historia, tecnología, economía… lo que sea. En segundos.</p>
+  </div>
+
+  <!-- MESSAGES -->
+  <div id="messages" style="display:none;"></div>
+
+  <!-- SUGGESTIONS -->
+  <div id="suggestions"></div>
+
+  <!-- INPUT -->
+  <div id="input-area">
+    <div id="input-row">
+      <textarea id="input" rows="1" placeholder="Pregúntame algo…" autocomplete="off" spellcheck="true"></textarea>
+      <button id="send-btn" title="Enviar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    <p id="footer-note">Explícame · Powered by Groq + Llama 3.3 70B</p>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

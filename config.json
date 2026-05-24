@@ -1,0 +1,36 @@
+{
+  "app": {
+    "name": "Shotzi",
+    "tagline": "Cualquier cosa. En segundos.",
+    "description": "Un chatbot que explica lo que sea de forma clara y sencilla."
+  },
+  "bot": {
+    "name": "Shotzi",
+    "avatar": "✦",
+    "welcomeMessage": "¡Hola! Soy **Shotzi** — te explico cualquier cosa de forma clara y simple.\n\nAntes de empezar, necesito tu **API Key de Groq**. Es gratis y puedes obtenerla en [console.groq.com](https://console.groq.com).\n\nEscribe tu API Key para continuar:",
+    "tokenPrompt": "Por favor, escribe tu API Key de Groq para activarme:",
+    "tokenSuccess": "¡Perfecto! API Key guardada. Ahora pregúntame lo que quieras — te lo explico al instante. 🚀",
+    "tokenError": "Hmm, esa API Key no parece válida. Asegúrate de que empieza con `gsk_` y vuelve a intentarlo.",
+    "systemPrompt": "Eres Explícame, un asistente experto en explicar conceptos de forma clara, simple y directa. Tu estilo es conversacional pero inteligente. Explicas ideas complejas con analogías cotidianas. Nunca usas jerga sin explicarla. Si te preguntan algo, das una respuesta directa y concisa primero, luego puedes expandir si es necesario. Respondes siempre en el mismo idioma que el usuario. Eres amigable, curioso y nunca condescendiente."
+  },
+  "groq": {
+    "apiUrl": "https://api.groq.com/openai/v1/chat/completions",
+    "model": "llama-3.3-70b-versatile",
+    "maxTokens": 1024,
+    "temperature": 0.7,
+    "stream": true
+  },
+  "ui": {
+    "theme": "dark",
+    "accentColor": "#F5E642",
+    "fontDisplay": "Instrument Serif",
+    "fontBody": "DM Sans",
+    "placeholderMessages": [
+      "¿Qué es la inflación?",
+      "Explícame cómo funciona el WiFi",
+      "¿Por qué el cielo es azul?",
+      "¿Qué es el blockchain?",
+      "Explícame la relatividad en 2 minutos"
+    ]
+  }
+}
